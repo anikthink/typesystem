@@ -1,36 +1,67 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TypeSystem
+
+![alt text](screenshot.png)
+**Export perfect Typography Scales for Modern Web Projects**
+
+---
+
+## Project Overview
+
+**TypeSystem** empowers designers and developers to create consistent, scalable, and beautiful typography systems for digital products. With an intuitive interface, real-time previews, and seamless export options, TypeSystem bridges the gap between design vision and production-ready code.
+
+- **Problem Solved:** Designing harmonious, responsive typography is complex and time-consuming. TypeSystem streamlines this process, letting you experiment, visualize, and export your perfect type scale in minutes.
+- **Target Audience:** UI/UX designers, web developers, design systems teams, and anyone building digital products who cares about great typography.
+- **Value Proposition:** Instantly see how your font choices, weights, and sizes look in both technical tables and real website previews. Export your custom scale as Tailwind-compatible CSS for effortless integration.
+
+---
+
+## Key Features & Capabilities
+
+### 🎨 Visual Type Scale Builder
+
+- **Experiment Freely:** Adjust fonts, weights, and sizes with live feedback.
+- **Technical & Real-World Preview:** See your scale in both a technical table and a realistic website mockup.
+- **Instant Feedback:** Every change updates the preview and code export in real time.
+
+### 🛠️ Tailwind-Compatible CSS Export
+
+- **One-Click Export:** Generate ready-to-use CSS or Tailwind config code for your typography system.
+- **Copy or Download:** Instantly copy code or download as a file for your project.
+
+### 🚀 Designer-Focused Workflow
+
+- **Intuitive UI:** Built for speed and creativity—no coding required.
+- **Responsive by Default:** Preview how your typography adapts across devices.
+- **Figma & Web Preview:** See your type scale in both design and live web contexts.
+
+---
+
+## Roadmap & Updates
+
+### 🔜 Upcoming Features
+
+- Community-driven presets and sharing.
+
+---
 
 ## Getting Started
 
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/anikthink/typesystem.git
+   cd typesystem
+   ```
+2. **Install dependencies:**
+   ```bash
+   npm install
+   # or
+   yarn install
+   ```
+3. **Run the development server:**
+   ```bash
+   npm run dev
+   # or
+   yarn dev
+   ```
+4. **Open your browser:**
+   Visit [http://localhost:3000](http://localhost:3000) to start designing your typography system.

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Eye, Code, LayoutGrid, FileText } from "lucide-react";
+import { Eye, LayoutGrid } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "./ui/badge";
 import { CodePreviewDialog } from "./CodePreviewDialog";
@@ -275,7 +275,7 @@ export function TypographyBuilder() {
 
       await new Promise((resolve) => setTimeout(resolve, 1000));
       toast.success("Fonts loaded successfully");
-    } catch (error) {
+    } catch {
       toast.error("Failed to load fonts");
     } finally {
       setLoading(false);
