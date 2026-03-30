@@ -28,48 +28,19 @@ import {
 } from "./ui/select";
 import { Button } from "./ui/button";
 import { Slider } from "./ui/slider";
-import type { TypographyConfig } from "./TypographyBuilder";
-
-interface LineHeightConfig {
-  xs: number;
-  sm: number;
-  base: number;
-  lg: number;
-  xl: number;
-  "2xl": number;
-  "3xl": number;
-  "4xl": number;
-  "5xl": number;
-}
-
-interface FontConfig {
-  fontFamily: string;
-  weights: number[];
-  letterSpacing: number;
-}
+import type {
+  LineHeightConfig,
+  TypographyConfig,
+} from "@/lib/typography";
+import { truncateDecimal } from "@/lib/typography";
 
 interface SidebarProps {
-  config: TypographyConfig & {
-    separateFonts: boolean;
-    headingFont: FontConfig;
-    bodyFont: FontConfig;
-    baseSize: number;
-    scaleRatio: number;
-    useCustomLineHeights: boolean;
-    lineHeightPreset: string;
-    lineHeights: LineHeightConfig;
-  };
+  config: TypographyConfig;
   setConfig: Dispatch<SetStateAction<TypographyConfig>>;
-  customHeadingFont: string;
-  setCustomHeadingFont: (v: string) => void;
-  customBodyFont: string;
-  setCustomBodyFont: (v: string) => void;
-  loading: boolean;
   setCodePreviewOpen: (v: boolean) => void;
   POPULAR_FONTS: string[];
   SCALE_RATIOS: Record<string, number>;
   LINE_HEIGHT_PRESETS: Record<string, LineHeightConfig>;
-  truncateDecimal: (num: number, places?: number) => number;
   applyLineHeightPreset: (preset: string) => void;
 }
 
@@ -80,7 +51,6 @@ export function AppSidebar({
   POPULAR_FONTS,
   SCALE_RATIOS,
   LINE_HEIGHT_PRESETS,
-  truncateDecimal,
   applyLineHeightPreset,
 }: SidebarProps) {
   return (
@@ -281,14 +251,14 @@ export function AppSidebar({
               <span className="text-md font-semibold">Line heights</span>
             </div>
             <Switch
-                checked={config.useCustomLineHeights}
-                onCheckedChange={(checked) =>
-                  setConfig((prev: SidebarProps["config"]) => ({
-                    ...prev,
-                    useCustomLineHeights: checked,
-                  }))
-                }
-              />    
+              checked={config.useCustomLineHeights}
+              onCheckedChange={(checked) =>
+                setConfig((prev: SidebarProps["config"]) => ({
+                  ...prev,
+                  useCustomLineHeights: checked,
+                }))
+              }
+            />
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <div className="flex items-center justify-between mb-2">
@@ -345,6 +315,30 @@ export function AppSidebar({
                 </div>
               </div>
             )}
+          </SidebarGroupContent>
+        </SidebarGroup>
+        <SidebarSeparator />
+        <SidebarGroup>
+          <SidebarGroupLabel className="flex justify-between items-center w-full">
+            <div className="flex items-center gap-2">
+              <MoveHorizontal className="h-4 w-4" />
+              <span className="text-md font-semibold">Font pairing</span>
+            </div>
+            <Switch
+              checked={config.separateFonts}
+              onCheckedChange={(checked) =>
+                setConfig((prev: SidebarProps["config"]) => ({
+                  ...prev,
+                  separateFonts: checked,
+                  bodyFont: checked ? prev.bodyFont : prev.headingFont,
+                }))
+              }
+            />
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <p className="text-xs text-muted-foreground">
+              Turn this off to force the whole preview and export into one font family.
+            </p>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>

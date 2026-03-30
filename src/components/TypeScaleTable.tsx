@@ -1,27 +1,17 @@
 import React from "react";
 import { Badge } from "./ui/badge";
-
-interface TypeScale {
-  name: string;
-  size: number;
-  lineHeight: number;
-  weight: number;
-  isHeading?: boolean;
-}
-
-interface FontConfig {
-  fontFamily: string;
-  weights: number[];
-  letterSpacing: number;
-}
+import {
+  pxToRem,
+  truncateDecimal,
+  type FontConfig,
+  type TypeScale,
+} from "@/lib/typography";
 
 interface TypeScaleTableProps {
   scale: TypeScale[];
   headingFont: FontConfig;
   bodyFont: FontConfig;
   baseSize: number;
-  truncateDecimal: (num: number, places?: number) => number;
-  pxToRem: (px: number, baseSize?: number) => number;
 }
 
 export const TypeScaleTable: React.FC<TypeScaleTableProps> = ({
@@ -29,8 +19,6 @@ export const TypeScaleTable: React.FC<TypeScaleTableProps> = ({
   headingFont,
   bodyFont,
   baseSize,
-  truncateDecimal,
-  pxToRem,
 }) => {
   return (
     <div className="space-y-6">

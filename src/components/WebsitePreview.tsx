@@ -1,18 +1,5 @@
 import React from "react";
-
-interface TypeScale {
-  name: string;
-  size: number;
-  lineHeight: number;
-  weight: number;
-  isHeading?: boolean;
-}
-
-interface FontConfig {
-  fontFamily: string;
-  weights: number[];
-  letterSpacing: number;
-}
+import type { FontConfig, TypeScale } from "@/lib/typography";
 
 interface WebsitePreviewProps {
   scale: TypeScale[];
@@ -37,9 +24,7 @@ export const WebsitePreview: React.FC<WebsitePreviewProps> = ({
           <span className="text-sm font-medium">Website Preview</span>
         </div>
       </div>
-      <div
-        className="h-full overflow-y-auto p-6"
-      >
+      <div className="h-full overflow-y-auto p-6">
         <div className="max-w-2xl">
           {/* Blog Header */}
           <div className="space-y-4 mb-8">
@@ -59,9 +44,7 @@ export const WebsitePreview: React.FC<WebsitePreviewProps> = ({
             <div
               style={{
                 fontFamily: `"${headingFont.fontFamily}", sans-serif`,
-                fontSize: `${
-                  scale.find((s) => s.name === "3xl")?.size || 30
-                }px`,
+                fontSize: `${scale.find((s) => s.name === "3xl")?.size || 30}px`,
                 lineHeight:
                   scale.find((s) => s.name === "3xl")?.lineHeight || 1.2,
                 fontWeight: getSafeMaxWeight(headingFont.weights),
@@ -82,7 +65,7 @@ export const WebsitePreview: React.FC<WebsitePreviewProps> = ({
               }}
               className="opacity-70"
             >
-              Jul 20th, 2025 — By Stephanie
+              Jul 20th, 2025 - By Stephanie
             </div>
           </div>
 
@@ -91,9 +74,7 @@ export const WebsitePreview: React.FC<WebsitePreviewProps> = ({
             <div
               style={{
                 fontFamily: `"${bodyFont.fontFamily}", sans-serif`,
-                fontSize: `${
-                  scale.find((s) => s.name === "base")?.size || 16
-                }px`,
+                fontSize: `${scale.find((s) => s.name === "base")?.size || 16}px`,
                 lineHeight:
                   scale.find((s) => s.name === "base")?.lineHeight || 1.5,
                 letterSpacing: `${bodyFont.letterSpacing}em`,
@@ -123,9 +104,7 @@ export const WebsitePreview: React.FC<WebsitePreviewProps> = ({
             <div
               style={{
                 fontFamily: `"${bodyFont.fontFamily}", sans-serif`,
-                fontSize: `${
-                  scale.find((s) => s.name === "base")?.size || 16
-                }px`,
+                fontSize: `${scale.find((s) => s.name === "base")?.size || 16}px`,
                 lineHeight:
                   scale.find((s) => s.name === "base")?.lineHeight || 1.5,
                 letterSpacing: `${bodyFont.letterSpacing}em`,
@@ -155,9 +134,7 @@ export const WebsitePreview: React.FC<WebsitePreviewProps> = ({
             <div
               style={{
                 fontFamily: `"${bodyFont.fontFamily}", sans-serif`,
-                fontSize: `${
-                  scale.find((s) => s.name === "base")?.size || 16
-                }px`,
+                fontSize: `${scale.find((s) => s.name === "base")?.size || 16}px`,
                 lineHeight:
                   scale.find((s) => s.name === "base")?.lineHeight || 1.5,
                 letterSpacing: `${bodyFont.letterSpacing}em`,
@@ -188,9 +165,7 @@ export const WebsitePreview: React.FC<WebsitePreviewProps> = ({
             <div
               style={{
                 fontFamily: `"${bodyFont.fontFamily}", sans-serif`,
-                fontSize: `${
-                  scale.find((s) => s.name === "base")?.size || 16
-                }px`,
+                fontSize: `${scale.find((s) => s.name === "base")?.size || 16}px`,
                 lineHeight:
                   scale.find((s) => s.name === "base")?.lineHeight || 1.5,
                 letterSpacing: `${bodyFont.letterSpacing}em`,
@@ -208,9 +183,7 @@ export const WebsitePreview: React.FC<WebsitePreviewProps> = ({
               <div
                 style={{
                   fontFamily: `"${bodyFont.fontFamily}", sans-serif`,
-                  fontSize: `${
-                    scale.find((s) => s.name === "sm")?.size || 14
-                  }px`,
+                  fontSize: `${scale.find((s) => s.name === "sm")?.size || 14}px`,
                   lineHeight:
                     scale.find((s) => s.name === "sm")?.lineHeight || 1.5,
                   letterSpacing: `${bodyFont.letterSpacing}em`,
@@ -218,7 +191,7 @@ export const WebsitePreview: React.FC<WebsitePreviewProps> = ({
                 }}
                 className="opacity-60"
               >
-                5 min read • Ancient History
+                5 min read - Ancient History
               </div>
             </div>
           </div>
