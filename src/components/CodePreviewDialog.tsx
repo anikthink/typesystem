@@ -16,6 +16,7 @@ interface CodePreviewDialogProps {
 export function CodePreviewDialog({ open, onOpenChange, cssCode, tailwindCode }: CodePreviewDialogProps) {
   const [copiedCSS, setCopiedCSS] = React.useState(false);
   const [copiedTailwind, setCopiedTailwind] = React.useState(false);
+  const [copiedAll, setCopiedAll] = React.useState(false);
 
   const copyCSS = () => {
     navigator.clipboard.writeText(cssCode);
@@ -31,14 +32,33 @@ export function CodePreviewDialog({ open, onOpenChange, cssCode, tailwindCode }:
     toast.success('Tailwind config copied to clipboard');
   };
 
+  const copyAll = () => {
+    navigator.clipboard.writeText(`/* CSS Variables */\n${cssCode}\n\n/* Tailwind Config */\n${tailwindCode}`);
+    setCopiedAll(true);
+    setTimeout(() => setCopiedAll(false), 2000);
+    toast.success('All export code copied to clipboard');
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl h-[80vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Export Code Preview</DialogTitle>
-          <DialogDescription>
-            Preview and copy the generated CSS variables or Tailwind configuration for your typography system.
-          </DialogDescription>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="space-y-1">
+              <DialogTitle>Export Code Preview</DialogTitle>
+              <DialogDescription>
+                Preview and copy the generated CSS variables or Tailwind configuration for your typography system.
+              </DialogDescription>
+            </div>
+            <Button onClick={copyAll} size="sm" variant="secondary">
+              {copiedAll ? (
+                <Check className="h-4 w-4 mr-2" />
+              ) : (
+                <Copy className="h-4 w-4 mr-2" />
+              )}
+              {copiedAll ? 'Copied all' : 'Copy all'}
+            </Button>
+          </div>
         </DialogHeader>
         
         <Tabs defaultValue="css" className="flex-1 flex flex-col min-h-0">
