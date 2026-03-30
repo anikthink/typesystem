@@ -50,7 +50,17 @@ export function TypographyBuilder() {
     lineHeightPreset: "Normal",
   });
   const [codePreviewOpen, setCodePreviewOpen] = useState(false);
-  const scale = useMemo(() => buildTypographyScale(config), [config]);
+  const scale = buildTypographyScale(config);
+  const fontHrefs = useMemo(
+    () => getGoogleFontHrefs(config),
+    [
+      config.headingFont.fontFamily,
+      config.bodyFont.fontFamily,
+      config.headingFont.weights,
+      config.bodyFont.weights,
+      config.separateFonts,
+    ]
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -61,10 +71,8 @@ export function TypographyBuilder() {
           .querySelectorAll('link[data-typesystem-font="true"]')
           .forEach((link) => link.remove());
 
-        const hrefs = getGoogleFontHrefs(config);
-
         await Promise.all(
-          hrefs.map(
+          fontHrefs.map(
             (href) =>
               new Promise<void>((resolve, reject) => {
                 const link = document.createElement("link");
@@ -94,11 +102,7 @@ export function TypographyBuilder() {
       cancelled = true;
     };
   }, [
-    config.headingFont.fontFamily,
-    config.bodyFont.fontFamily,
-    config.headingFont.weights,
-    config.bodyFont.weights,
-    config.separateFonts,
+    fontHrefs,
   ]);
 
   const applyLineHeightPreset = (preset: string) => {
