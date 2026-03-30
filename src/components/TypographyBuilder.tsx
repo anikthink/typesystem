@@ -51,14 +51,36 @@ export function TypographyBuilder() {
   });
   const [codePreviewOpen, setCodePreviewOpen] = useState(false);
   const scale = buildTypographyScale(config);
+  const headingFontFamily = config.headingFont.fontFamily;
+  const headingFontWeights = config.headingFont.weights;
+  const headingLetterSpacing = config.headingFont.letterSpacing;
+  const bodyFontFamily = config.bodyFont.fontFamily;
+  const bodyFontWeights = config.bodyFont.weights;
+  const bodyLetterSpacing = config.bodyFont.letterSpacing;
+  const separateFonts = config.separateFonts;
   const fontHrefs = useMemo(
-    () => getGoogleFontHrefs(config),
+    () =>
+      getGoogleFontHrefs({
+        headingFont: {
+          fontFamily: headingFontFamily,
+          weights: headingFontWeights,
+          letterSpacing: headingLetterSpacing,
+        },
+        bodyFont: {
+          fontFamily: bodyFontFamily,
+          weights: bodyFontWeights,
+          letterSpacing: bodyLetterSpacing,
+        },
+        separateFonts,
+      }),
     [
-      config.headingFont.fontFamily,
-      config.bodyFont.fontFamily,
-      config.headingFont.weights,
-      config.bodyFont.weights,
-      config.separateFonts,
+      headingFontFamily,
+      headingFontWeights,
+      headingLetterSpacing,
+      bodyFontFamily,
+      bodyFontWeights,
+      bodyLetterSpacing,
+      separateFonts,
     ]
   );
 

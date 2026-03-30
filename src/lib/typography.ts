@@ -193,10 +193,12 @@ export const buildTypographyScale = (config: TypographyConfig): TypeScale[] => {
   });
 };
 
-export const getGoogleFontHrefs = (config: TypographyConfig): string[] => {
-  const fontsToLoad = config.separateFonts
-    ? [config.headingFont, config.bodyFont]
-    : [config.headingFont];
+export const getGoogleFontHrefs = ({
+  headingFont,
+  bodyFont,
+  separateFonts,
+}: Pick<TypographyConfig, "headingFont" | "bodyFont" | "separateFonts">): string[] => {
+  const fontsToLoad = separateFonts ? [headingFont, bodyFont] : [headingFont];
   const uniqueFonts = Array.from(new Set(fontsToLoad.map((font) => font.fontFamily)));
 
   return uniqueFonts.flatMap((fontFamily) => {
