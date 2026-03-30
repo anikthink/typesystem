@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from "react";
+"use client";
+
+import React, { useEffect, useMemo, useState } from "react";
 import { Eye, LayoutGrid } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "./ui/badge";
@@ -7,435 +9,184 @@ import { AppSidebar } from "./AppSidebar";
 import { SidebarProvider } from "./ui/sidebar";
 import { TypeScaleTable } from "./TypeScaleTable";
 import { WebsitePreview } from "./WebsitePreview";
+import {
+  analyzeTypographySystem,
+  buildTypographyConfigFromPreset,
+  buildTypographyScale,
+  DEFAULT_TYPOGRAPHY_CONFIG,
+  generateTypographyCSS,
+  generateTypographyInstallInstructions,
+  generateTypographyJSON,
+  generateTypographyTailwind,
+  generateTypographyVariablesOnly,
+  getGoogleFontHrefs,
+  getSafeMaxWeight,
+  getSafeWeight,
+  LINE_HEIGHT_PRESETS,
+  POPULAR_FONTS,
+  PREVIEW_MODES,
+  SCALE_RATIOS,
+  TYPOGRAPHY_PRESETS,
+  type PreviewMode,
+  type SavedTypographyPreset,
+  type TypographyConfig,
+  type TypographyPreset,
+} from "@/lib/typography";
 
-interface TypeScale {
-  name: string;
-  size: number;
-  lineHeight: number;
-  weight: number;
-  isHeading?: boolean;
-}
+const SAVED_PRESETS_STORAGE_KEY = "typesystem-saved-presets";
 
-interface FontConfig {
-  fontFamily: string;
-  weights: number[];
-  letterSpacing: number;
-}
-
-interface LineHeightConfig {
-  xs: number;
-  sm: number;
-  base: number;
-  lg: number;
-  xl: number;
-  "2xl": number;
-  "3xl": number;
-  "4xl": number;
-  "5xl": number;
-}
-
-export interface TypographyConfig {
-  headingFont: FontConfig;
-  bodyFont: FontConfig;
-  baseSize: number;
-  scaleRatio: number;
-  scale: TypeScale[];
-  separateFonts: boolean;
-  lineHeights: LineHeightConfig;
-  useCustomLineHeights: boolean;
-  lineHeightPreset: string;
-}
-
-const POPULAR_FONTS = [
-  "Inter",
-  "Roboto",
-  "Open Sans",
-  "Lato",
-  "Montserrat",
-  "Source Sans Pro",
-  "Raleway",
-  "Poppins",
-  "Nunito",
-  "Work Sans",
-  "Playfair Display",
-  "Merriweather",
-  "IBM Plex Sans",
-  "DM Sans",
-  "Space Grotesk",
-  "JetBrains Mono",
-  "Fira Code",
-  "Crimson Text",
-  "Libre Baskerville",
-  "Cormorant Garamond",
-];
-
-const SCALE_RATIOS = {
-  "Minor Second": 1.067,
-  "Major Second": 1.125,
-  "Minor Third": 1.2,
-  "Major Third": 1.25,
-  "Perfect Fourth": 1.333,
-  "Augmented Fourth": 1.414,
-  "Perfect Fifth": 1.5,
-  "Golden Ratio": 1.618,
-};
-
-const LINE_HEIGHT_PRESETS = {
-  Tight: {
-    xs: 1.2,
-    sm: 1.25,
-    base: 1.4,
-    lg: 1.25,
-    xl: 1.2,
-    "2xl": 1.15,
-    "3xl": 1.1,
-    "4xl": 1.05,
-    "5xl": 1.0,
+const cloneConfig = (config: TypographyConfig): TypographyConfig => ({
+  ...config,
+  headingFont: {
+    ...config.headingFont,
+    weights: [...config.headingFont.weights],
   },
-  Normal: {
-    xs: 1.4,
-    sm: 1.5,
-    base: 1.6,
-    lg: 1.4,
-    xl: 1.3,
-    "2xl": 1.25,
-    "3xl": 1.2,
-    "4xl": 1.15,
-    "5xl": 1.1,
+  bodyFont: {
+    ...config.bodyFont,
+    weights: [...config.bodyFont.weights],
   },
-  Loose: {
-    xs: 1.6,
-    sm: 1.75,
-    base: 1.8,
-    lg: 1.6,
-    xl: 1.5,
-    "2xl": 1.45,
-    "3xl": 1.4,
-    "4xl": 1.35,
-    "5xl": 1.3,
+  lineHeights: {
+    ...config.lineHeights,
   },
-  "Extra Loose": {
-    xs: 1.8,
-    sm: 2.0,
-    base: 2.0,
-    lg: 1.8,
-    xl: 1.7,
-    "2xl": 1.65,
-    "3xl": 1.6,
-    "4xl": 1.55,
-    "5xl": 1.5,
-  },
-};
-
-// Helper function to truncate decimals to 3 places
-const truncateDecimal = (num: number, places: number = 3): number => {
-  return Math.floor(num * Math.pow(10, places)) / Math.pow(10, places);
-};
-
-// Helper function to convert px to rem
-const pxToRem = (px: number, baseSize: number = 16): number => {
-  return truncateDecimal(px / baseSize, 3);
-};
-
-// Helper functions to safely get min/max weights with fallbacks
-const getSafeMinWeight = (weights: number[]): number => {
-  return weights.length > 0 ? Math.min(...weights) : 400;
-};
-
-const getSafeMaxWeight = (weights: number[]): number => {
-  return weights.length > 0 ? Math.max(...weights) : 700;
-};
-
-const getSafeWeight = (weights: number[], targetWeight: number): number => {
-  if (weights.length === 0) return 400;
-  if (weights.includes(targetWeight)) return targetWeight;
-  return weights.find((w) => w <= targetWeight) || getSafeMinWeight(weights);
-};
+});
 
 export function TypographyBuilder() {
-  const [config, setConfig] = useState<TypographyConfig>({
-    headingFont: {
-      fontFamily: "Libre Baskerville",
-      weights: [400, 700], // Standard weights
-      letterSpacing: -0.02,
-    },
-    bodyFont: {
-      fontFamily: "Inter",
-      weights: [400, 500], // Standard weights
-      letterSpacing: 0,
-    },
-    baseSize: 16,
-    scaleRatio: 1.25,
-    scale: [],
-    separateFonts: true, // Default to separate fonts
-    lineHeights: {
-      xs: 1.4,
-      sm: 1.5,
-      base: 1.6,
-      lg: 1.4,
-      xl: 1.3,
-      "2xl": 1.25,
-      "3xl": 1.2,
-      "4xl": 1.15,
-      "5xl": 1.1,
-    },
-    useCustomLineHeights: false,
-    lineHeightPreset: "Normal",
-  });
-
-  const [customHeadingFont, setCustomHeadingFont] = useState("");
-  const [customBodyFont, setCustomBodyFont] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [config, setConfig] = useState<TypographyConfig>(
+    DEFAULT_TYPOGRAPHY_CONFIG
+  );
   const [codePreviewOpen, setCodePreviewOpen] = useState(false);
+  const [presetName, setPresetName] = useState("");
+  const [savedPresets, setSavedPresets] = useState<SavedTypographyPreset[]>([]);
+  const [fontLoadState, setFontLoadState] = useState<
+    "idle" | "loading" | "ready" | "error"
+  >("idle");
 
-  const generateScale = () => {
-    const scales = [
-      { name: "xs", multiplier: 0.75, isHeading: false },
-      { name: "sm", multiplier: 0.875, isHeading: false },
-      { name: "base", multiplier: 1, isHeading: false },
-      { name: "lg", multiplier: config.scaleRatio, isHeading: true },
-      {
-        name: "xl",
-        multiplier: Math.pow(config.scaleRatio, 2),
-        isHeading: true,
-      },
-      {
-        name: "2xl",
-        multiplier: Math.pow(config.scaleRatio, 3),
-        isHeading: true,
-      },
-      {
-        name: "3xl",
-        multiplier: Math.pow(config.scaleRatio, 4),
-        isHeading: true,
-      },
-      {
-        name: "4xl",
-        multiplier: Math.pow(config.scaleRatio, 5),
-        isHeading: true,
-      },
-      {
-        name: "5xl",
-        multiplier: Math.pow(config.scaleRatio, 6),
-        isHeading: true,
-      },
-    ];
+  const actualScale = buildTypographyScale(config);
+  const previewScale = buildTypographyScale(config, {
+    previewMode: config.previewMode,
+  });
+  const fontHrefs = useMemo(
+    () =>
+      getGoogleFontHrefs({
+        headingFont: config.headingFont,
+        bodyFont: config.bodyFont,
+        separateFonts: config.separateFonts,
+      }),
+    [
+      config.headingFont,
+      config.bodyFont,
+      config.separateFonts,
+    ]
+  );
+  const insights = useMemo(
+    () => analyzeTypographySystem(config, previewScale, config.previewMode),
+    [config, previewScale]
+  );
+  const cssVariablesOnly = useMemo(
+    () => generateTypographyVariablesOnly(config, actualScale),
+    [config, actualScale]
+  );
+  const cssCode = useMemo(
+    () => generateTypographyCSS(config, actualScale),
+    [config, actualScale]
+  );
+  const tailwindCode = useMemo(
+    () => generateTypographyTailwind(config, actualScale),
+    [config, actualScale]
+  );
+  const jsonCode = useMemo(
+    () => generateTypographyJSON(config, actualScale),
+    [config, actualScale]
+  );
+  const installInstructions = useMemo(
+    () => generateTypographyInstallInstructions(config),
+    [config]
+  );
+  const activePreviewMode = PREVIEW_MODES[config.previewMode];
 
-    const newScale = scales.map((scale) => {
-      const font = scale.isHeading ? config.headingFont : config.bodyFont;
-      const lineHeight = config.useCustomLineHeights
-        ? config.lineHeights[scale.name as keyof LineHeightConfig]
-        : scale.multiplier < 1
-        ? 1.5
-        : Math.max(1.1, 1.6 - scale.multiplier * 0.15);
-
-      return {
-        name: scale.name,
-        size: truncateDecimal(config.baseSize * scale.multiplier, 3),
-        lineHeight: truncateDecimal(lineHeight, 3),
-        weight:
-          scale.multiplier > 2
-            ? getSafeMaxWeight(font.weights)
-            : getSafeMinWeight(font.weights),
-        isHeading: scale.isHeading,
-      };
-    });
-
-    setConfig((prev) => ({ ...prev, scale: newScale }));
-  };
-
-  const loadGoogleFonts = async () => {
-    setLoading(true);
+  useEffect(() => {
     try {
-      const existingLinks = document.querySelectorAll(
-        'link[href*="fonts.googleapis.com"]'
-      );
-      existingLinks.forEach((link) => link.remove());
+      const raw = window.localStorage.getItem(SAVED_PRESETS_STORAGE_KEY);
+      if (!raw) {
+        return;
+      }
 
-      const fontsToLoad = config.separateFonts
-        ? [config.headingFont, config.bodyFont]
-        : [config.headingFont];
+      const parsed = JSON.parse(raw) as SavedTypographyPreset[];
+      setSavedPresets(Array.isArray(parsed) ? parsed : []);
+    } catch {
+      setSavedPresets([]);
+    }
+  }, []);
 
-      const uniqueFonts = Array.from(
-        new Set(fontsToLoad.map((f) => f.fontFamily))
-      );
+  useEffect(() => {
+    window.localStorage.setItem(
+      SAVED_PRESETS_STORAGE_KEY,
+      JSON.stringify(savedPresets)
+    );
+  }, [savedPresets]);
 
-      for (const fontFamily of uniqueFonts) {
-        const font = fontsToLoad.find((f) => f.fontFamily === fontFamily);
-        if (font && font.weights.length > 0) {
-          const link = document.createElement("link");
-          link.href = `https://fonts.googleapis.com/css2?family=${fontFamily.replace(
-            /\s+/g,
-            "+"
-          )}:wght@${font.weights.join(";")}&display=swap`;
-          link.rel = "stylesheet";
-          document.head.appendChild(link);
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadGoogleFonts = async () => {
+      setFontLoadState("loading");
+
+      try {
+        document
+          .querySelectorAll('link[data-typesystem-font="true"]')
+          .forEach((link) => link.remove());
+
+        const results = await Promise.allSettled(
+          fontHrefs.map(
+            (href) =>
+              new Promise<void>((resolve, reject) => {
+                const link = document.createElement("link");
+                link.href = href;
+                link.rel = "stylesheet";
+                link.dataset.typesystemFont = "true";
+                link.onload = () => resolve();
+                link.onerror = () => reject(new Error(`Failed to load ${href}`));
+                document.head.appendChild(link);
+              })
+          )
+        );
+
+        if (cancelled) {
+          return;
+        }
+
+        if (results.some((result) => result.status === "rejected")) {
+          setFontLoadState("error");
+          toast.error("One or more fonts failed to load");
+          return;
+        }
+
+        setFontLoadState("ready");
+        toast.success("Fonts loaded successfully");
+      } catch {
+        if (!cancelled) {
+          setFontLoadState("error");
+          toast.error("Failed to load fonts");
         }
       }
+    };
 
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      toast.success("Fonts loaded successfully");
-    } catch {
-      toast.error("Failed to load fonts");
-    } finally {
-      setLoading(false);
-    }
+    loadGoogleFonts();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [fontHrefs]);
+
+  const applyPreset = (preset: TypographyPreset) => {
+    setConfig(buildTypographyConfigFromPreset(preset));
   };
 
-  const generateCSS = () => {
-    const headingWeights = config.headingFont.weights;
-    const bodyWeights = config.bodyFont.weights;
-    const allWeights = Array.from(
-      new Set([...headingWeights, ...bodyWeights])
-    ).sort((a, b) => a - b);
-
-    // Ensure we have at least some weights
-    if (allWeights.length === 0) {
-      allWeights.push(400, 700);
-    }
-
-    return `/* Typography System - ${
-      config.separateFonts ? "Dual Font" : "Single Font"
-    } */
-:root {
-  /* Font families */
-  --font-family-heading: "${config.headingFont.fontFamily}", sans-serif;
-  --font-family-body: "${config.bodyFont.fontFamily}", sans-serif;
-  
-  /* Base configuration */
-  --font-size-base: ${pxToRem(config.baseSize, config.baseSize)}rem;
-  --scale-ratio: ${config.scaleRatio};
-  
-  /* Letter spacing */
-  --letter-spacing-heading: ${truncateDecimal(
-    config.headingFont.letterSpacing,
-    3
-  )}em;
-  --letter-spacing-body: ${truncateDecimal(config.bodyFont.letterSpacing, 3)}em;
-  
-  /* Font sizes */
-${config.scale
-  .map(
-    (item) =>
-      `  --font-size-${item.name}: ${pxToRem(item.size, config.baseSize)}rem;`
-  )
-  .join("\n")}
-  
-  /* Line heights */
-${config.scale
-  .map(
-    (item) =>
-      `  --line-height-${item.name}: ${truncateDecimal(item.lineHeight, 3)};`
-  )
-  .join("\n")}
-  
-  /* Font weights */
-${allWeights
-  .map((weight) => `  --font-weight-${weight}: ${weight};`)
-  .join("\n")}
-}
-
-/* Typography utility classes */
-.font-heading { 
-  font-family: var(--font-family-heading); 
-  letter-spacing: var(--letter-spacing-heading);
-}
-
-.font-body { 
-  font-family: var(--font-family-body); 
-  letter-spacing: var(--letter-spacing-body);
-}
-
-${config.scale
-  .map(
-    (item) => `.text-${item.name} {
-  font-size: var(--font-size-${item.name});
-  line-height: var(--line-height-${item.name});
-}`
-  )
-  .join("\n\n")}
-
-${allWeights
-  .map(
-    (weight) => `.font-${weight} { font-weight: var(--font-weight-${weight}); }`
-  )
-  .join("\n")}
-
-/* Semantic heading styles */
-h1 { 
-  font-family: var(--font-family-heading);
-  font-size: var(--font-size-4xl);
-  line-height: var(--line-height-4xl);
-  font-weight: var(--font-weight-${getSafeMaxWeight(headingWeights)});
-  letter-spacing: var(--letter-spacing-heading);
-}
-
-h2 { 
-  font-family: var(--font-family-heading);
-  font-size: var(--font-size-3xl);
-  line-height: var(--line-height-3xl);
-  font-weight: var(--font-weight-${getSafeWeight(headingWeights, 600)});
-  letter-spacing: var(--letter-spacing-heading);
-}
-
-h3 { 
-  font-family: var(--font-family-heading);
-  font-size: var(--font-size-2xl);
-  line-height: var(--line-height-2xl);
-  font-weight: var(--font-weight-${getSafeWeight(headingWeights, 600)});
-  letter-spacing: var(--letter-spacing-heading);
-}
-
-p, body { 
-  font-family: var(--font-family-body);
-  font-size: var(--font-size-base);
-  line-height: var(--line-height-base);
-  font-weight: var(--font-weight-${getSafeMinWeight(bodyWeights)});
-  letter-spacing: var(--letter-spacing-body);
-}`;
-  };
-
-  const generateTailwind = () => {
-    const headingWeights = config.headingFont.weights;
-    const bodyWeights = config.bodyFont.weights;
-    const allWeights = Array.from(
-      new Set([...headingWeights, ...bodyWeights])
-    ).sort((a, b) => a - b);
-
-    // Ensure we have at least some weights
-    if (allWeights.length === 0) {
-      allWeights.push(400, 700);
-    }
-
-    return `// tailwind.config.js
-module.exports = {
-  theme: {
-    extend: {
-      fontFamily: {
-        'heading': ['${config.headingFont.fontFamily}', 'sans-serif'],
-        'body': ['${config.bodyFont.fontFamily}', 'sans-serif'],
-      },
-      fontSize: {
-${config.scale
-  .map(
-    (item) =>
-      `        '${item.name}': ['${pxToRem(
-        item.size,
-        config.baseSize
-      )}rem', { lineHeight: '${truncateDecimal(item.lineHeight, 3)}' }],`
-  )
-  .join("\n")}
-      },
-      fontWeight: {
-${allWeights.map((weight) => `        '${weight}': '${weight}',`).join("\n")}
-      },
-      letterSpacing: {
-        'heading': '${truncateDecimal(config.headingFont.letterSpacing, 3)}em',
-        'body': '${truncateDecimal(config.bodyFont.letterSpacing, 3)}em',
-      }
-    }
-  }
-}`;
+  const applyPreviewMode = (previewMode: PreviewMode) => {
+    setConfig((prev) => ({
+      ...prev,
+      previewMode,
+    }));
   };
 
   const applyLineHeightPreset = (preset: string) => {
@@ -445,62 +196,84 @@ ${allWeights.map((weight) => `        '${weight}': '${weight}',`).join("\n")}
         lineHeights:
           LINE_HEIGHT_PRESETS[preset as keyof typeof LINE_HEIGHT_PRESETS],
         lineHeightPreset: preset,
+        useCustomLineHeights: true,
       }));
     }
   };
 
-  useEffect(() => {
-    generateScale();
-  }, [
-    config.baseSize,
-    config.scaleRatio,
-    config.headingFont.weights,
-    config.bodyFont.weights,
-    config.useCustomLineHeights,
-    config.lineHeights,
-  ]);
+  const saveCurrentPreset = () => {
+    const name = presetName.trim();
+    const label =
+      name || `${config.headingFont.fontFamily} / ${config.bodyFont.fontFamily}`;
 
-  useEffect(() => {
-    loadGoogleFonts();
-  }, [
-    config.headingFont.fontFamily,
-    config.bodyFont.fontFamily,
-    config.headingFont.weights,
-    config.bodyFont.weights,
-  ]);
+    const nextPreset: SavedTypographyPreset = {
+      id: `${Date.now()}`,
+      name: label,
+      description: "Saved from the local builder.",
+      createdAt: new Date().toISOString(),
+      config: cloneConfig(config),
+    };
+
+    setSavedPresets((current) => [nextPreset, ...current].slice(0, 12));
+    setPresetName("");
+    toast.success(`Saved "${label}"`);
+  };
+
+  const loadSavedPreset = (preset: SavedTypographyPreset) => {
+    setConfig(cloneConfig(preset.config));
+    toast.success(`Loaded "${preset.name}"`);
+  };
+
+  const deleteSavedPreset = (id: string) => {
+    setSavedPresets((current) => current.filter((preset) => preset.id !== id));
+    toast.success("Preset deleted");
+  };
 
   return (
     <SidebarProvider>
-      <div className="h-screen max-h-screen flex flex-row">
-        {/* Sidebar and Main Content as siblings in a flex row */}
+      <div className="h-screen max-h-screen flex flex-row bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.9),rgba(241,245,249,1))]">
         <div className="flex-shrink-0 w-80 min-w-80 max-w-80 h-full">
           <AppSidebar
             config={config}
             setConfig={setConfig}
-            customHeadingFont={customHeadingFont}
-            setCustomHeadingFont={setCustomHeadingFont}
-            customBodyFont={customBodyFont}
-            setCustomBodyFont={setCustomBodyFont}
-            loading={loading}
             setCodePreviewOpen={setCodePreviewOpen}
+            starterPresets={TYPOGRAPHY_PRESETS}
+            savedPresets={savedPresets}
+            onApplyPreset={applyPreset}
+            onApplySavedPreset={loadSavedPreset}
+            onDeleteSavedPreset={deleteSavedPreset}
+            onSaveCurrentPreset={saveCurrentPreset}
+            presetName={presetName}
+            setPresetName={setPresetName}
             POPULAR_FONTS={POPULAR_FONTS}
             SCALE_RATIOS={SCALE_RATIOS}
             LINE_HEIGHT_PRESETS={LINE_HEIGHT_PRESETS}
-            truncateDecimal={truncateDecimal}
-            applyLineHeightPreset={applyLineHeightPreset}
+            onApplyLineHeightPreset={applyLineHeightPreset}
+            onApplyPreviewMode={applyPreviewMode}
+            fontLoadState={fontLoadState}
+            insights={insights}
           />
         </div>
+
         <div className="flex-1 flex flex-col min-w-0">
-          {/* Preview Header */}
-          <div className="border-b p-4 bg-card">
-            <div className="flex items-center justify-between">
+          <div className="border-b px-4 py-3 bg-white/80 backdrop-blur-sm">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex items-center gap-2">
                 <Eye className="h-4 w-4" />
                 <span className="font-medium">Live Preview</span>
-              </div>
-              <div className="flex items-center gap-2">
                 <Badge variant="secondary" className="text-xs">
-                  {config.scale.length} sizes
+                  {actualScale.length} sizes
+                </Badge>
+                <Badge variant="outline" className="text-xs">
+                  {activePreviewMode.label}
+                </Badge>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge
+                  variant={fontLoadState === "error" ? "destructive" : "secondary"}
+                  className="text-xs"
+                >
+                  Fonts {fontLoadState}
                 </Badge>
                 {config.separateFonts ? (
                   <>
@@ -513,17 +286,16 @@ ${allWeights.map((weight) => `        '${weight}': '${weight}',`).join("\n")}
                   </>
                 ) : (
                   <Badge variant="secondary" className="text-xs">
-                    {config.headingFont.fontFamily}
+                    Shared: {config.headingFont.fontFamily}
                   </Badge>
                 )}
               </div>
             </div>
           </div>
-          {/* Split Screen Content */}
+
           <div className="flex-1 flex min-w-0">
-            {/* Left Panel - Type Scale Table */}
             <div className="w-1/2 border-r min-w-0">
-              <div className="p-4 border-b bg-muted/20">
+              <div className="p-4 border-b bg-slate-50/80">
                 <div className="flex items-center gap-2">
                   <LayoutGrid className="h-4 w-4" />
                   <span className="text-sm font-medium">Type Scale</span>
@@ -531,29 +303,34 @@ ${allWeights.map((weight) => `        '${weight}': '${weight}',`).join("\n")}
               </div>
               <div className="h-full overflow-y-auto p-6">
                 <TypeScaleTable
-                  scale={config.scale}
+                  scale={actualScale}
                   headingFont={config.headingFont}
                   bodyFont={config.bodyFont}
                   baseSize={config.baseSize}
-                  truncateDecimal={truncateDecimal}
-                  pxToRem={pxToRem}
                 />
               </div>
             </div>
-            {/* Right Panel - Website Preview */}
+
             <WebsitePreview
-              scale={config.scale}
+              scale={previewScale}
               headingFont={config.headingFont}
               bodyFont={config.bodyFont}
+              previewMode={config.previewMode}
+              previewModeConfig={activePreviewMode}
+              insights={insights}
               getSafeMaxWeight={getSafeMaxWeight}
               getSafeWeight={getSafeWeight}
             />
           </div>
+
           <CodePreviewDialog
             open={codePreviewOpen}
             onOpenChange={setCodePreviewOpen}
-            cssCode={generateCSS()}
-            tailwindCode={generateTailwind()}
+            cssCode={cssCode}
+            cssVariablesOnlyCode={cssVariablesOnly}
+            tailwindCode={tailwindCode}
+            jsonCode={jsonCode}
+            installInstructions={installInstructions}
           />
         </div>
       </div>
