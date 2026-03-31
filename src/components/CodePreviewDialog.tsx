@@ -1,106 +1,204 @@
-import React from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
-import { Button } from './ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Copy, Check } from 'lucide-react';
-import { toast } from 'sonner';
-import { ScrollArea } from './ui/scroll-area';
+"use client";
+
+import React from "react";
+import { Check, Copy } from "lucide-react";
+import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "./ui/dialog";
+import { Button } from "./ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { ScrollArea } from "./ui/scroll-area";
 
 interface CodePreviewDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   cssCode: string;
+  cssVariablesOnlyCode: string;
   tailwindCode: string;
+  jsonCode: string;
+  installInstructions: string;
 }
 
-export function CodePreviewDialog({ open, onOpenChange, cssCode, tailwindCode }: CodePreviewDialogProps) {
-  const [copiedCSS, setCopiedCSS] = React.useState(false);
-  const [copiedTailwind, setCopiedTailwind] = React.useState(false);
-  const [copiedAll, setCopiedAll] = React.useState(false);
+const useCopyState = () => {
+  const [copiedKey, setCopiedKey] = React.useState<string | null>(null);
 
-  const copyCSS = () => {
-    navigator.clipboard.writeText(cssCode);
-    setCopiedCSS(true);
-    setTimeout(() => setCopiedCSS(false), 2000);
-    toast.success('CSS copied to clipboard');
+  const copy = async (key: string, value: string, message: string) => {
+    await navigator.clipboard.writeText(value);
+    setCopiedKey(key);
+    window.setTimeout(() => setCopiedKey(null), 2000);
+    toast.success(message);
   };
 
-  const copyTailwind = () => {
-    navigator.clipboard.writeText(tailwindCode);
-    setCopiedTailwind(true);
-    setTimeout(() => setCopiedTailwind(false), 2000);
-    toast.success('Tailwind config copied to clipboard');
-  };
+  return { copiedKey, copy };
+};
 
-  const copyAll = () => {
-    navigator.clipboard.writeText(`/* CSS Variables */\n${cssCode}\n\n/* Tailwind Config */\n${tailwindCode}`);
-    setCopiedAll(true);
-    setTimeout(() => setCopiedAll(false), 2000);
-    toast.success('All export code copied to clipboard');
+export function CodePreviewDialog({
+  open,
+  onOpenChange,
+  cssCode,
+  cssVariablesOnlyCode,
+  tailwindCode,
+  jsonCode,
+  installInstructions,
+}: CodePreviewDialogProps) {
+  const { copiedKey, copy } = useCopyState();
+  const copyAll = async () => {
+    await navigator.clipboard.writeText(
+      [
+        "# CSS Variables Only",
+        cssVariablesOnlyCode,
+        "",
+        "# Full CSS",
+        cssCode,
+        "",
+        "# Tailwind Config",
+        tailwindCode,
+        "",
+        "# JSON Tokens",
+        jsonCode,
+        "",
+        "# Install Guide",
+        installInstructions,
+      ].join("\n")
+    );
+    toast.success("All exports copied to clipboard");
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl h-[80vh] flex flex-col">
-        <DialogHeader>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="space-y-1">
-              <DialogTitle>Export Code Preview</DialogTitle>
-              <DialogDescription>
-                Preview and copy the generated CSS variables or Tailwind configuration for your typography system.
-              </DialogDescription>
-            </div>
-            <Button onClick={copyAll} size="sm" variant="secondary">
-              {copiedAll ? (
-                <Check className="h-4 w-4 mr-2" />
-              ) : (
-                <Copy className="h-4 w-4 mr-2" />
-              )}
-              {copiedAll ? 'Copied all' : 'Copy all'}
-            </Button>
-          </div>
-        </DialogHeader>
-        
-        <Tabs defaultValue="css" className="flex-1 flex flex-col min-h-0">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="css">CSS Variables</TabsTrigger>
-            <TabsTrigger value="tailwind">Tailwind Config</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="css" className="flex-1 flex flex-col mt-4 min-h-0">
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="text-sm font-medium">CSS Custom Properties</h4>
-              <Button onClick={copyCSS} size="sm" variant="outline">
-                {copiedCSS ? (
-                  <Check className="h-4 w-4 mr-2" />
-                ) : (
-                  <Copy className="h-4 w-4 mr-2" />
-                )}
-                {copiedCSS ? 'Copied!' : 'Copy CSS'}
+      <DialogContent className="flex h-[84vh] max-w-5xl flex-col overflow-hidden border-slate-200 bg-gradient-to-br from-white to-slate-50 p-0">
+        <div className="border-b border-slate-200 px-6 py-5">
+          <DialogHeader className="space-y-2">
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-1">
+                <DialogTitle className="text-xl">Export Code Preview</DialogTitle>
+                <DialogDescription>
+                  Copy the exact typography outputs you need, including raw variables, a full CSS layer, Tailwind tokens, and portable JSON.
+                </DialogDescription>
+              </div>
+              <Button onClick={copyAll} variant="outline" size="sm">
+                <Copy className="mr-2 h-4 w-4" />
+                Copy all
               </Button>
             </div>
-            <div className="flex-1 min-h-0 bg-muted rounded-lg">
-              <ScrollArea className="h-full p-4">
-                <pre className="text-sm font-mono whitespace-pre-wrap">{cssCode}</pre>
+          </DialogHeader>
+        </div>
+
+        <Tabs defaultValue="variables" className="flex min-h-0 flex-1 flex-col px-6 pb-6 pt-5">
+          <TabsList className="grid w-full grid-cols-5 rounded-full bg-slate-100 p-1">
+            <TabsTrigger value="variables">Variables</TabsTrigger>
+            <TabsTrigger value="css">Full CSS</TabsTrigger>
+            <TabsTrigger value="tailwind">Tailwind</TabsTrigger>
+            <TabsTrigger value="json">JSON</TabsTrigger>
+            <TabsTrigger value="install">Install</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="variables" className="mt-4 flex min-h-0 flex-1 flex-col">
+            <div className="mb-3 flex items-center justify-between">
+              <h4 className="text-sm font-medium text-slate-700">CSS variables only</h4>
+              <Button
+                onClick={() => copy("variables", cssVariablesOnlyCode, "Variables copied")}
+                size="sm"
+                variant="outline"
+              >
+                {copiedKey === "variables" ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
+                {copiedKey === "variables" ? "Copied" : "Copy variables"}
+              </Button>
+            </div>
+            <div className="min-h-0 flex-1 rounded-2xl border border-slate-200 bg-slate-950 shadow-xl shadow-slate-200/50">
+              <ScrollArea className="h-full">
+                <pre className="p-5 text-sm leading-6 text-slate-100">
+                  {cssVariablesOnlyCode}
+                </pre>
               </ScrollArea>
             </div>
           </TabsContent>
-          
-          <TabsContent value="tailwind" className="flex-1 flex flex-col mt-4 min-h-0">
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="text-sm font-medium">Tailwind Configuration</h4>
-              <Button onClick={copyTailwind} size="sm" variant="outline">
-                {copiedTailwind ? (
-                  <Check className="h-4 w-4 mr-2" />
-                ) : (
-                  <Copy className="h-4 w-4 mr-2" />
-                )}
-                {copiedTailwind ? 'Copied!' : 'Copy Tailwind'}
+
+          <TabsContent value="css" className="mt-4 flex min-h-0 flex-1 flex-col">
+            <div className="mb-3 flex items-center justify-between">
+              <h4 className="text-sm font-medium text-slate-700">Full CSS output</h4>
+              <Button
+                onClick={() => copy("css", cssCode, "CSS copied")}
+                size="sm"
+                variant="outline"
+              >
+                {copiedKey === "css" ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
+                {copiedKey === "css" ? "Copied" : "Copy CSS"}
               </Button>
             </div>
-            <div className="flex-1 min-h-0 bg-muted rounded-lg">
-              <ScrollArea className="h-full p-4">
-                <pre className="text-sm font-mono whitespace-pre-wrap">{tailwindCode}</pre>
+            <div className="min-h-0 flex-1 rounded-2xl border border-slate-200 bg-slate-950 shadow-xl shadow-slate-200/50">
+              <ScrollArea className="h-full">
+                <pre className="p-5 text-sm leading-6 text-slate-100">
+                  {cssCode}
+                </pre>
+              </ScrollArea>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="tailwind" className="mt-4 flex min-h-0 flex-1 flex-col">
+            <div className="mb-3 flex items-center justify-between">
+              <h4 className="text-sm font-medium text-slate-700">Tailwind config snippet</h4>
+              <Button
+                onClick={() => copy("tailwind", tailwindCode, "Tailwind copied")}
+                size="sm"
+                variant="outline"
+              >
+                {copiedKey === "tailwind" ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
+                {copiedKey === "tailwind" ? "Copied" : "Copy Tailwind"}
+              </Button>
+            </div>
+            <div className="min-h-0 flex-1 rounded-2xl border border-slate-200 bg-slate-950 shadow-xl shadow-slate-200/50">
+              <ScrollArea className="h-full">
+                <pre className="p-5 text-sm leading-6 text-slate-100">
+                  {tailwindCode}
+                </pre>
+              </ScrollArea>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="json" className="mt-4 flex min-h-0 flex-1 flex-col">
+            <div className="mb-3 flex items-center justify-between">
+              <h4 className="text-sm font-medium text-slate-700">JSON tokens</h4>
+              <Button
+                onClick={() => copy("json", jsonCode, "JSON copied")}
+                size="sm"
+                variant="outline"
+              >
+                {copiedKey === "json" ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
+                {copiedKey === "json" ? "Copied" : "Copy JSON"}
+              </Button>
+            </div>
+            <div className="min-h-0 flex-1 rounded-2xl border border-slate-200 bg-slate-950 shadow-xl shadow-slate-200/50">
+              <ScrollArea className="h-full">
+                <pre className="p-5 text-sm leading-6 text-slate-100">
+                  {jsonCode}
+                </pre>
+              </ScrollArea>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="install" className="mt-4 flex min-h-0 flex-1 flex-col">
+            <div className="mb-3 flex items-center justify-between">
+              <h4 className="text-sm font-medium text-slate-700">Install instructions</h4>
+              <Button
+                onClick={() => copy("install", installInstructions, "Install guide copied")}
+                size="sm"
+                variant="outline"
+              >
+                {copiedKey === "install" ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
+                {copiedKey === "install" ? "Copied" : "Copy guide"}
+              </Button>
+            </div>
+            <div className="min-h-0 flex-1 rounded-2xl border border-slate-200 bg-white shadow-xl shadow-slate-200/50">
+              <ScrollArea className="h-full">
+                <pre className="whitespace-pre-wrap p-5 text-sm leading-7 text-slate-700">
+                  {installInstructions}
+                </pre>
               </ScrollArea>
             </div>
           </TabsContent>
